@@ -1,0 +1,13 @@
+# Plugins baked into the controller image. No versions pinned on purpose — the
+# plugin CLI resolves the latest versions compatible with this Jenkins LTS, which
+# avoids controller/plugin version mismatches.
+workflow-aggregator
+git
+configuration-as-code
+sonar
+slack
+credentials-binding
+pipeline-stage-view
+ws-cleanup
+timestamper
+junit

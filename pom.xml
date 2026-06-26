@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <!-- Latest 3.x line: stable, Java 17 baseline. Bump to 4.x when ready. -->
+    <version>3.5.11</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.example.ci</groupId>
+  <artifactId>ci-demo</artifactId>
+  <!-- SNAPSHOT so `mvn deploy` targets the Nexus maven-snapshots repo. -->
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>ci-demo</name>
+  <description>Sample Spring Boot service used to exercise the Jenkins pipeline</description>
+
+  <properties>
+    <java.version>17</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <jacoco.version>0.8.12</jacoco.version>
+    <sonar-maven-plugin.version>5.7.0.6970</sonar-maven-plugin.version>
+
+    <!-- Sonar picks the coverage report up from this default path. -->
+    <sonar.projectKey>ci-demo</sonar.projectKey>
+    <sonar.projectName>ci-demo</sonar.projectName>
+    <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Repackage into an executable jar. Version inherited from the parent. -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+
+      <!-- Coverage: agent during tests, XML report at the verify phase. -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+
+    <pluginManagement>
+      <plugins>
+        <!-- Pinned here so the version is locked, but only downloaded when the
+             sonar:sonar goal actually runs (in the Jenkins analysis stage). -->
+        <plugin>
+          <groupId>org.sonarsource.scanner.maven</groupId>
+          <artifactId>sonar-maven-plugin</artifactId>
+          <version>${sonar-maven-plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <!-- Where `mvn deploy` publishes artifacts. The ids match servers in
+       ci/settings.xml. Hostname "nexus" resolves on the docker-compose network;
+       use http://localhost:8081/... when running Maven outside the stack. -->
+  <distributionManagement>
+    <repository>
+      <id>nexus-releases</id>
+      <name>Nexus Releases</name>
+      <url>http://nexus:8081/repository/maven-releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>nexus-snapshots</id>
+      <name>Nexus Snapshots</name>
+      <url>http://nexus:8081/repository/maven-snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+</project>

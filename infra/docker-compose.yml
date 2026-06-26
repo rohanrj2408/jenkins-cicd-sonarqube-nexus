@@ -1,0 +1,86 @@
+# Local CI stack: Jenkins controller + agent, SonarQube (+ Postgres), Nexus.
+#
+# Bring it up from the repo root:
+#   docker compose -f infra/docker-compose.yml up -d --build
+#
+# IMPORTANT (SonarQube/Elasticsearch): the host kernel needs a higher mmap limit
+# or SonarQube will exit on boot. On Linux run once:
+#   sudo sysctl -w vm.max_map_count=262144
+# (Docker Desktop on macOS/Windows applies this inside its VM automatically.)
+
+services:
+  jenkins:
+    build:
+      context: ./jenkins
+    image: ci-jenkins:local
+    container_name: jenkins
+    ports:
+      - "8080:8080"   # web UI
+      - "50000:50000" # inbound agent port
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    restart: unless-stopped
+
+  jenkins-agent:
+    build:
+      context: ./agent
+    image: ci-jenkins-agent:local
+    container_name: jenkins-agent
+    depends_on:
+      - jenkins
+    environment:
+      # Fill JENKINS_SECRET after you create the node in Jenkins (see SETUP.md).
+      JENKINS_URL: "http://jenkins:8080"
+      JENKINS_AGENT_NAME: "maven-agent"
+      JENKINS_SECRET: "${JENKINS_AGENT_SECRET:-}"
+      JENKINS_AGENT_WORKDIR: "/home/jenkins/agent"
+    restart: unless-stopped
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    depends_on:
+      - sonardb
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_JDBC_URL: "jdbc:postgresql://sonardb:5432/sonar"
+      SONAR_JDBC_USERNAME: "sonar"
+      SONAR_JDBC_PASSWORD: "sonar"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    restart: unless-stopped
+
+  sonardb:
+    image: postgres:16
+    container_name: sonardb
+    environment:
+      POSTGRES_USER: "sonar"
+      POSTGRES_PASSWORD: "sonar"
+      POSTGRES_DB: "sonar"
+    volumes:
+      - sonardb_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  nexus:
+    image: sonatype/nexus3
+    container_name: nexus
+    ports:
+      - "8081:8081"
+    volumes:
+      - nexus_data:/nexus-data
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  sonardb_data:
+  nexus_data:
