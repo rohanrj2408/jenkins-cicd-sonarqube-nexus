@@ -10,9 +10,6 @@ master/agent setup and the supporting tools wired in:
 Everything needed to run it locally — Jenkins controller, a build agent,
 SonarQube (+ Postgres), and Nexus — is defined in Docker Compose.
 
-[![Build](https://github.com/dnyaneshwar2408/jenkins-cicd-sonarqube-nexus/actions/workflows/build.yml/badge.svg)](https://github.com/dnyaneshwar2408/jenkins-cicd-sonarqube-nexus/actions/workflows/build.yml)
-
-> Swap `dnyaneshwar2408/jenkins-cicd-sonarqube-nexus` in the badge for your repo.
 
 ## Pipeline
 
